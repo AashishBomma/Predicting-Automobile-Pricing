@@ -1,0 +1,180 @@
+---
+# IDS 572 Data Mining Assignment 4 
+## Aashish Bomma(650563462), Vishal Brahmananda(678517159)
+title: "DM_Assignment_4"
+author: "Vishal_Brahmanada(678517159) and Aashish Bomma(650563462)"
+date: "2022-12-02"
+output: html_document
+---
+
+| **Question 1:**
+| *(1) After your EDA, what factors do you think influence a customer’s decision to buy a care? What are the objectives of the model that Farid plans to build?*
+
+| Solution:
+```{r, warning=FALSE}
+library(readxl)
+library(nnet)
+library(NeuralNetTools)
+library(Metrics)
+Nueral_network_dataset<- read_excel("C:/Users/vbrahm7/OneDrive - University of Illinois Chicago/Documents/DM_Assignment_4/Nueral_network_Dataset.xlsx")
+complete_dataset<- Nueral_network_dataset
+head(complete_dataset)
+dim(complete_dataset) 
+sum(is.na(complete_dataset)) 
+str(complete_dataset)
+```
+| complete_dataset had 31 rows and 28 features.
+| 
+| sum() value is 0, which says that there are no null values in the data.
+| 
+| 
+
+```{r, warning=FALSE}
+column_factor <- c("Fuel", "MC", "Auto", "Cyl", "Drs", "Grs", "ABS", "Abag_1", "Abag_2", "AC", "Comp", "CD", "Clock", "Pw", "PStr", "Radio", "SpM", "M_Rim", "Tow_Bar")
+complete_dataset[column_factor] <- lapply(complete_dataset[column_factor], factor)
+str(complete_dataset)
+```
+| Categorical variables converted from numerical and character to factors
+
+```{r, warning=FALSE}
+complete_dataset$Price <- gsub(",", "", complete_dataset$Price)
+#complete_dataset$Price
+numerical_cols <- c("Price", "Age", "KM", "HP", "CC", "Wght", "G_P")
+complete_dataset[numerical_cols] <- apply(complete_dataset[numerical_cols], 2,  as.numeric)
+str(complete_dataset)
+```
+| We applied gsub function to the Price variable because some of the input values had warning messages since they weren't formatted correctly.
+```{r, warning=FALSE}
+
+complete_dataset$Mfr_G <- ifelse(complete_dataset$Mfr_G == "1.0", "1", complete_dataset$Mfr_G)
+complete_dataset$Mfr_G <- as.factor(complete_dataset$Mfr_G)
+```
+| As each car could have different and distinctive attributes, there is no need to search for outliers in the dataset.
+| 
+| 
+```{r, warning=FALSE}
+#install.packages("GGally")
+library(GGally)
+library(ggplot2)
+ggcorr(complete_dataset,label = T)
+
+complete_dataset <- subset(complete_dataset, select = -c(Fuel,Drs,Cyl,ABS, Abag_1, PStr,Colour))
+```
+| It is clear that there is a high positive correlation between Price and HP, CC, and Weight. Price, however, has a negative correlation with KM. Additionally, there is a significant positive correlation between the three variables: weight, CC, and HP.
+```{r, warning=FALSE}
+hist(complete_dataset$Price, col="#1b98e0")
+```
+| 
+| The majority of car prices, as we can see, fall between $14,000 and $18,000.
+EDA has been performed.
+
+```{r, warning=FALSE}
+head(complete_dataset)
+
+null <- lm(Price~1, data=complete_dataset)
+full <- lm(Price~., data=complete_dataset)
+
+variable_selection <- step(null, scope=list(lower=null, upper=full), direction="forward")
+summary(variable_selection)
+```
+| Therefore, we can draw the conclusion that attributes HP, Clock, Red, Silver, SpM, MRim, Wght, and Auto have a significant impact on a customer's decision to purchase a car.
+
+| **Question 2**
+
+| *(2) Construct a neural network model. Validate and interpret the model using a different number of hidden neurons.*
+| Solution:
+```{r, warning=FALSE}
+scale <- function(x) {
+  (x - min(x)) / (max(x) - min(x))
+}
+complete_dataset_normalize <- complete_dataset %>% dplyr::mutate_if(is.numeric, scale)
+complete_dataset_normalize
+str(complete_dataset_normalize)
+```
+| Here, we normalized the data.
+```{r, warning=FALSE}
+set.seed(1234)
+index <- sample(2, nrow(complete_dataset_normalize), replace = T, prob = c(0.6, 0.4))
+train <- complete_dataset_normalize[index == 1, ]
+test <- complete_dataset_normalize[index == 2, ]
+```
+| Here, we split the data into training and testing samples.
+| 
+| **Building Neural Network**
+```{r, results='hide', warning=FALSE}
+sequence <- seq(0.0001,1,length.out=20)
+i <- 1
+table_column_names <- c("Decay", "Size", "Error_Percentage")
+table_matrix <- data.frame(matrix(nrow=1, ncol = length(table_column_names)))
+colnames(table_matrix) <- table_column_names
+table_matrix <- na.omit(table_matrix)
+for (j in sequence)
+{
+  x <- 1
+  while (x <= 20) 
+  {
+    nn_model <- nnet(Price ~ HP + Clock + Grs +Age+ Mfr_G, data = train, linout = TRUE, 
+                          size = x, decay = j, maxit = 1000)
+    nn_pred <- predict(nn_model, test)
+    error <- rmse(test$Price, nn_pred)
+    error_percent <- error/mean(test$Price)
+    table_matrix[nrow(table_matrix) + 1,] <- c(j, x, error_percent)
+    x <- x + 1
+    i <- i + 1
+    
+  }
+}
+```
+| We are hiding the output since it generates a lot of lines.
+| As a sample we are adding a small screenshot of the output.
+![alt text here](C:\Users\vbrahm7\OneDrive - University of Illinois Chicago\Documents\DM_Assignment_4\1.png)
+
+| Best Neural Network Model
+```{r}
+head(table_matrix)
+
+best_nn_index <- which(table_matrix$Error_Percentage == min(table_matrix$Error_Percentage))
+best_nn_model <- table_matrix[best_nn_index,]
+print(best_nn_model)
+plotnet(nn_model)
+```
+
+**Question 3**
+
+| *(3) Compare your neural network models with linear regression model. Which one is better?*
+| Solution:
+
+| Building linear regression model
+```{r, warning=FALSE}
+lr_index <- sample(2,nrow(complete_dataset),replace = T, prob = c(0.7,0.3))
+lr_train <- complete_dataset[lr_index==1,]
+lr_test <- complete_dataset[lr_index==2,]
+lr_model <- lm(Price ~ HP + Clock  + Age + Grs + Mfr_G, data=lr_train)
+```
+
+| Calculating error percentage for linear regression model.
+```{r, warning=FALSE}
+lr_pred <- predict(lr_model, lr_test)
+lr_error<-rmse(lr_test$Price, lr_pred)
+lr_error_percent<- lr_error/mean(lr_test$Price)
+print(lr_error_percent)
+```
+| By looking at the error percentages of both neural network(14.6%) and linear regression(7.1%), we can say that linear regression model is better since it has less error percent.
+
+| **Linear Regression Equation**
+```{r, warning=FALSE}
+summary(lr_model)
+```
+| **Linear Regression Model equation** : 
+Price = 6826.47+42.54HP+1924.80Clock1+110.63Age+1359.13Grs6-388.97Mfr_G1
+
+
+**Question 4**
+
+| *(4) Make a decision and offer your recommendations.* 
+
+| Solution:
+
+| a. Neural Network is better than linear regression because neural networks can deal with nonlinearities. So, if the data has nonlinear dependencies, neural network works better.
+| b. The difference between the errors(Neural Network Model and Linear Regression Model) is less and we can overlook.
+| c. Our final recommendation is use neural network.
