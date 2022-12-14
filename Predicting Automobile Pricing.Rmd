@@ -1,14 +1,6 @@
 ---
-# IDS 572 Data Mining Assignment 4 
-## Aashish Bomma(650563462), Vishal Brahmananda(678517159)
-title: "DM_Assignment_4"
-author: "Vishal_Brahmanada(678517159) and Aashish Bomma(650563462)"
-date: "2022-12-02"
-output: html_document
----
 
-| **Question 1:**
-| *(1) After your EDA, what factors do you think influence a customer’s decision to buy a care? What are the objectives of the model that Farid plans to build?*
+| **(1) After your EDA, what factors do you think influence a customer’s decision to buy a care? What are the objectives of the model that the customer plans to build?**
 
 | Solution:
 ```{r, warning=FALSE}
@@ -79,9 +71,8 @@ summary(variable_selection)
 ```
 | Therefore, we can draw the conclusion that attributes HP, Clock, Red, Silver, SpM, MRim, Wght, and Auto have a significant impact on a customer's decision to purchase a car.
 
-| **Question 2**
 
-| *(2) Construct a neural network model. Validate and interpret the model using a different number of hidden neurons.*
+| **(2) Construct a neural network model. Validate and interpret the model using a different number of hidden neurons.**
 | Solution:
 ```{r, warning=FALSE}
 scale <- function(x) {
@@ -126,8 +117,6 @@ for (j in sequence)
 }
 ```
 | We are hiding the output since it generates a lot of lines.
-| As a sample we are adding a small screenshot of the output.
-![alt text here](C:\Users\vbrahm7\OneDrive - University of Illinois Chicago\Documents\DM_Assignment_4\1.png)
 
 | Best Neural Network Model
 ```{r}
@@ -139,9 +128,7 @@ print(best_nn_model)
 plotnet(nn_model)
 ```
 
-**Question 3**
-
-| *(3) Compare your neural network models with linear regression model. Which one is better?*
+| **(3) Compare your neural network models with linear regression model. Which one is better?**
 | Solution:
 
 | Building linear regression model
@@ -169,9 +156,7 @@ summary(lr_model)
 Price = 6826.47+42.54HP+1924.80Clock1+110.63Age+1359.13Grs6-388.97Mfr_G1
 
 
-**Question 4**
-
-| *(4) Make a decision and offer your recommendations.* 
+| **(4) Make a decision and offer your recommendations.**
 
 | Solution:
 
